@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "web-stress-lab"
+version = "0.1.0"
+description = "Bounded UI reliability experiments against a local synthetic lab"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+stresslab = "web_stress_lab.interfaces.cli:main"
+
+[dependency-groups]
+dev = [
+    "mypy==2.4.0",
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.17.3",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv]
+required-version = "==0.13.6"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+extend-exclude = [".agents", ".tools"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --strict-config --import-mode=importlib"
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+asyncio_default_test_loop_scope = "function"
+markers = [
+    "unit: pure rules and input validation",
+    "architecture: dependency and import boundaries",
+    "integration: real local adapters and installed entry points",
+    "e2e: complete installed local workflows",
+    "fault_injection: lifecycle, safety and reporting failures",
+    "load: explicitly selected bounded load experiments",
+]
+
+[tool.coverage.run]
+source = ["web_stress_lab"]
+branch = true
+patch = ["subprocess"]
+
+[tool.coverage.report]
+show_missing = true
+

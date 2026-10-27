@@ -1,0 +1,86 @@
+{
+  "repository": "https://github.com/addyosmani/agent-skills",
+  "commit": "aeac41d4d005999432bb7312f7ff06383a91d59d",
+  "license": "MIT",
+  "archive": {
+    "url": "https://codeload.github.com/addyosmani/agent-skills/zip/aeac41d4d005999432bb7312f7ff06383a91d59d",
+    "sha256": "89d42f8089b5e02734794d98a19527fa631811eb976847c2bc3507042651e880"
+  },
+  "files": {
+    ".agents/LICENSE": {
+      "source": "LICENSE",
+      "git_blob_sha1": "d67778ada6b9cda6227e9130da182c13e73c8b2e",
+      "sha256": "6f202f8bd568cd730dbb2b0d1f8e243bc74c2fa1f64dbce9b2c7ea08bd5c9fd7"
+    },
+    ".agents/references/accessibility-checklist.md": {
+      "source": "references/accessibility-checklist.md",
+      "git_blob_sha1": "c8c61e5f3d5a010a0d0ecb918bfaffe6c76fca78",
+      "sha256": "61c759d94d52296231f5f310b92b401f56c44e4430dc3cc95ebac5d7b1d5ffac"
+    },
+    ".agents/references/definition-of-done.md": {
+      "source": "references/definition-of-done.md",
+      "git_blob_sha1": "35e39f9e15f6dd0ff4725a6e5cbce7f2aa69064a",
+      "sha256": "d1c75d2ae65d2c7a9cd01f93fa8de63e00e75f2fe5d08be224d576157054dcee"
+    },
+    ".agents/references/observability-checklist.md": {
+      "source": "references/observability-checklist.md",
+      "git_blob_sha1": "ad40d7aa3fca5d2091fa45be234c14aee22c3588",
+      "sha256": "25fcd0e854596a5ab6f11b002050d245bf78f5ae0fcbd1df699b89451ae0e1e8"
+    },
+    ".agents/references/orchestration-patterns.md": {
+      "source": "references/orchestration-patterns.md",
+      "git_blob_sha1": "09cddd31d52a95be1d9bca814547d184b9945e44",
+      "sha256": "61e543d86f19f86b83074f8c1c769455c7085a2c72dd47b1da21a8c63785be4a"
+    },
+    ".agents/references/performance-checklist.md": {
+      "source": "references/performance-checklist.md",
+      "git_blob_sha1": "88b6f6a41be7561746c5580137a892583e5f0029",
+      "sha256": "fffc38b8f3b328a973aab8b1a2efdd72b65710d8f4b57f28f8374ddae7f8a88b"
+    },
+    ".agents/references/security-checklist.md": {
+      "source": "references/security-checklist.md",
+      "git_blob_sha1": "fc5e29b92c183fa69e0952b61a99761dc48b4c0b",
+      "sha256": "37774056502fe8970dcd2fd27dca5fa31f2a55232649fc3056c89c3af7d62755"
+    },
+    ".agents/references/testing-patterns.md": {
+      "source": "references/testing-patterns.md",
+      "git_blob_sha1": "bc96e271ad241ca567f06d21c6ecc001455b80f1",
+      "sha256": "f0bf05acd0edcadc27297ad5b74f104c8103ccfedba1a05cd6d6ae4af8364c56"
+    },
+    ".agents/skills/code-review-and-quality/SKILL.md": {
+      "source": "skills/code-review-and-quality/SKILL.md",
+      "git_blob_sha1": "08209ff2208d2883d48d945f7754c428b77f8d87",
+      "sha256": "2db1e850379f255fd3091ef278cde24cd6c7d2ba23e360cc52ea522c40d4396e"
+    },
+    ".agents/skills/incremental-implementation/SKILL.md": {
+      "source": "skills/incremental-implementation/SKILL.md",
+      "git_blob_sha1": "9c4f49bc841adb3c0f98baaa9eabd435a5b64ef9",
+      "sha256": "df66536610071727feae1ca95f3c391c248ad828041750ccd3699cce763aa00b"
+    },
+    ".agents/skills/planning-and-task-breakdown/SKILL.md": {
+      "source": "skills/planning-and-task-breakdown/SKILL.md",
+      "git_blob_sha1": "296249b64334bcfd1aeaefd27b9e3e5494e38ec0",
+      "sha256": "ed0f90cc5951ddd4bcab7f871f64efec93a49af9279ef93bc470da77ad8da3f7"
+    },
+    ".agents/skills/security-and-hardening/SKILL.md": {
+      "source": "skills/security-and-hardening/SKILL.md",
+      "git_blob_sha1": "e80e1e9a4f5b2989308c376d4ea0d333fe2c26ef",
+      "sha256": "2e3fc60eed5aba97fe416f3f3c9317fdb014a682925ec70a733c3ff99e4b9858"
+    },
+    ".agents/skills/security-and-hardening/references/hardening-patterns.md": {
+      "source": "skills/security-and-hardening/references/hardening-patterns.md",
+      "git_blob_sha1": "e5fba73c9fc029444d3c099d0a51538e90ed97c2",
+      "sha256": "2e1b93a502b4cdb0258404441f3aab029b0cce4003fbbcc61af9a2de18bab9ab"
+    },
+    ".agents/skills/spec-driven-development/SKILL.md": {
+      "source": "skills/spec-driven-development/SKILL.md",
+      "git_blob_sha1": "f54426bec00bcda5f700ab3368eed7203306830f",
+      "sha256": "c4b97ce3d7f24be0e67fd612c7595f65504872e3a9f8d338d098b2363fdb66ef"
+    },
+    ".agents/skills/test-driven-development/SKILL.md": {
+      "source": "skills/test-driven-development/SKILL.md",
+      "git_blob_sha1": "2f9c4bad747df3c88f3cd443b4990ab12d77b7d0",
+      "sha256": "a3aa6ba95638497025577469eda10ed17918698209615aeafbc26f131bf2469d"
+    }
+  }
+}

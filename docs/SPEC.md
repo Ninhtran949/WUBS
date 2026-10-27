@@ -1,0 +1,94 @@
+# Web Stress Lab specification
+
+Status: SE/SA design baseline, 2026-10-27; [PROJECT](PROJECT.md) records implementation progress and available commands. Source: [Task.md](../Task.md). This specification makes that brief implementable and adapts its recommended harness/tree to the existing repository. It is not an execution authorization or an implementation report.
+
+## Objective and scope
+
+Deliver an installable Python framework for reproducible UI reliability experiments and bounded HTTP load against a bundled synthetic lab. Windows 11 is the primary development platform; Linux portability is tested. Target stack: Python 3.12+, Asyncio, Playwright, pytest, Locust. Engineering choices and boundaries are recorded in [ARCHITECTURE](ARCHITECTURE.md) and its ADRs.
+
+The local foundation includes real CLI, lab, browser and HTTP execution, account ownership, timing, error handling, measurements, reports, and automated verification. Optional TOTP, protected session reuse, and explicitly supported network profiles are separate capabilities with visible availability checks. External execution remains disabled until the authorization and enforcement gates in [SECURITY](SECURITY.md) pass.
+
+Non-goals for this foundation: third-party engagement automation, evasion, distributed controllers, cloud orchestration, a metrics service, a web dashboard, generic arbitrary-site clicking, or downloading/executing plugins from experiment files.
+
+## Capability map and acceptance
+
+Each row is an independently testable capability. Implement only the assigned slice from the [plan](plans/implementation-plan.md); its task IDs identify dependencies and checks.
+
+| ID | Capability / owner | Observable acceptance | Task.md source |
+| --- | --- | --- | --- |
+| F01 | Configuration and scope / interfaces + domain | Safe YAML/JSON loading and Pydantic validation reject unknown fields, duplicate/unknown IDs, nonfinite values and unsafe bounds. Scope rejection happens before secret resolution, browser launch or network work. | 4, 7, 9, 16 |
+| F02 | Identities and secrets / domain + adapters | JSON account metadata validates unique IDs, profiles, and secret references. Filters are deterministic. Missing secrets fail without exposing values. Optional TOTP tests cover expiry and configured clock skew. | 7 |
+| F03 | Synthetic lab / packaged lab app | Login, optional TOTP, navigation, forms, profiles/feed, follow/unfollow, comments, namespace-scoped reset, latency/error injection, and session expiry work locally. Tests assert UI and backend state. | 11 |
+| F04 | Browser engine / infrastructure | Async Chromium, isolated contexts, explicit per-context profiles, login and optional storage-state reuse operate with tested expiry recovery. Failure/stop/crash closes owned resources without cross-identity state leakage. | 8, 13 |
+| F05 | Run controller / application | Bounded queues, workers, origin admission, exclusive leases, backpressure and stop propagation work. Every accepted case has terminal accounting. One case failure is isolated; policy/resource violations stop the experiment. | 7, 9 |
+| F06 | Trusted scenarios / browser adapters | Typed registry supports login, navigation, forms, TEST_FOLLOW and TEST_COMMENT. Payload validation, backend assertions, stable operation IDs, reconciliation and namespace cleanup prevent duplicate writes. | 8, 11 |
+| F07 | Workload and timing / domain + application | Deterministic queue, fixed concurrency, bounded ramp and soak modes are distinct from no/fixed/seeded-random think time. Per-case random draws and effective delays are recorded independently of completion order. | 9, 10 |
+| F08 | HTTP load / managed Locust adapter | A separate process enforces user/spawn/stage settings, finite duration, request budgets, global request-rate safety cap, timeouts, error thresholds and owned shutdown. Stats are ingested without mixing schedulers. | 12 |
+| F09 | Measurements / adapters + application | Record provenance and the requested latency, throughput, error/timeout, resource, context, queue, worker and cancellation metrics with units and availability. Browser/request/server timings remain distinct. | 14 |
+| F10 | Durable results / storage + presentation | Unique run directories contain raw data, manifest, summaries, failures and safe HTML. Interrupted/partial runs and reporting failures remain visible; prior runs are never overwritten. | 14, 15 |
+| F11 | CLI and comparison / interfaces | All commands below give useful exit codes and optional JSON. Comparison validates engine, target/workload, sample and environment compatibility before drawing conclusions. | 15, 16 |
+| F12 | Engineering qualification / tests + CI | Import boundaries, unit/integration/E2E/fault tests, quality gates, installed-wheel smoke, and bounded local CI pass with recorded evidence. No external load in CI. | 5, 17, 20 |
+
+F01 and F03 enable browser work; F02/F04 enable F05/F06; F05 enables F07. F08 shares only validated policy/results with the browser engine. F09/F10 grow with each executing slice instead of waiting until the last phase. F12 starts at bootstrap and gates each capability.
+
+## Input contract
+
+An experiment has `schema_version`, a seed, one `engine` (`browser` or `http`), target/scope, typed scenario selections, account catalog/filter, workload, think-time settings, finite limits, artifact policy, and output location. A single run never silently combines engines. Paths are config-relative; secret values are never valid report/config fields.
+
+Target scope records normalized exact origins (scheme, host, port), permitted scenario capabilities, resource limits, and an authorization reference/expiry when external. Wildcards, credentials in URLs, unsupported schemes, arbitrary imports/commands, and attempts to override a registered scenario's mutability are rejected. Read [SECURITY](SECURITY.md) for enforcement rather than treating this record as permission.
+
+Account metadata supports `account_id`, `username`, `password_ref`, optional `totp_secret_ref`, `network_profile` and `browser_profile`. References initially use explicitly named environment variables; legacy account formats require an explicit adapter and fixture, not guessed field mappings. Runtime credentials stay outside serializable domain results.
+
+### Initial defaults
+
+These are configuration defaults, not measured hardware capacity. Only the Chromium/headless/isolation/concurrency values come directly from Task.md; remaining values are conservative SE/SA baseline choices to test and refine explicitly.
+
+| Setting | Initial contract |
+| --- | --- |
+| Target | Bundled loopback lab; exact port is declared by the experiment/launcher. |
+| Browser | Chromium, headless, fresh isolated context per case; no persistent auth by default. |
+| Browser concurrency | 2; absolute requested ceiling 10, further limited by origin and measured resource admission. No automatic rise to 10. |
+| Navigation / action timeout | 15 s / 5 s. |
+| Shutdown budget | 30 s, including a bounded cleanup reserve; validate compatibility with operation deadlines. |
+| Baseline work | At most 10 cases and 60 s; every mode has a finite maximum even for soak. |
+| Retry | One eligible retry after the initial attempt; seeded bounded exponential backoff, all attempts recorded. Never automatic for an unknown write outcome. |
+| Think time | No delay by default; fixed or seeded random (including configured 3-7 s) is explicit. |
+| HTTP smoke | 2 users, spawn 1 user/s, duration 30 s, at most 100 requests and 5 requests/s with burst 1. This is a safety cap, not an achievable-throughput claim. |
+| Artifacts | On failure for the synthetic local lab; other environments require an explicit permitted artifact policy. |
+| Retention | Local protected artifacts expire after 7 days by default; reports record policy, and cleanup is limited to verified owned artifact paths. |
+
+Higher loads require explicit configuration, a capacity calibration record, and safety gates. Missing metrics are unavailable with a reason, never zero or assumed headroom.
+
+## Lifecycle and failure contracts
+
+- Account execution follows `AVAILABLE -> LEASED -> RUNNING -> COMPLETED / FAILED / BLOCKED`; accepted queued/running cases additionally support terminal `CANCELLED` and `NOT_RUN` accounting on stop. An ordinary case failure does not fail sibling tasks by exception propagation.
+- Account availability/lease ownership is separate from immutable case history. Releasing a lease does not erase a completed result or immediately unblock a challenged identity. Each lease has an owner token; release occurs only after the adapter can no longer act.
+- Run statuses distinguish `RUNNING`, `COMPLETED`, `FAILED`, `BLOCKED`, `CANCELLED` and recovered `INTERRUPTED`. An incomplete manifest or missing final summary never implies success.
+- Case results include identifiers, scenario, attempt, terminal status, categorized failure, timestamps/durations, measurement availability, and effect certainty (`confirmed` or `unknown`). Cancellation after submission can leave an unknown mutation; preserve it for reconciliation.
+- Error categories include `ConfigurationError`, `AccountValidationError`, `AuthenticationError`, `TOTPError`, `ProxyConnectionError`, `NavigationTimeoutError`, `LocatorTimeoutError`, `BrowserCrashError`, `ScenarioAssertionError`, `ResourceLimitError`, `ScopeViolationError`, and `ReportingError`. Unexpected verification challenges are BLOCKED, not a login retry loop. Sanitized causes preserve diagnostic meaning.
+
+## CLI contract
+
+Target commands (availability is recorded in PROJECT; currently only help/version exist):
+
+```text
+stresslab doctor
+stresslab validate-config <experiment.yaml>
+stresslab list-scenarios
+stresslab lab start
+stresslab run <experiment.yaml>
+stresslab report <experiment_id>
+stresslab compare <run_a> <run_b>
+```
+
+Support machine-readable JSON and concise human output. `validate-config` is static validation, without launching engines or resolving secrets. `doctor` reports runtime/dependency/browser availability, validated config, output access, and local lab readiness; it does not install tools or probe external targets silently. List/report/compare commands do not run scenarios.
+
+Exit codes: 0 success, 1 observed scenario/threshold failure, 2 invalid input/usage, 3 blocked authorization/admission, 4 infrastructure/reporting failure, 130 user cancellation. Include the primary cause and any cleanup/reporting failure in structured output rather than losing them behind one numeric code.
+
+## Report contract and foundation completion
+
+Each `reports/<experiment_id>/` contains `manifest.json`, `summary.json`, `measurements.csv`, `failures.json`, `report.html`, `system_test.log` (sanitized structured events), and an `artifacts/` directory when artifacts exist. Schemas are versioned; raw records carry run/case/scenario/attempt IDs, units and sampling context. The manifest records resolved sanitized configuration, tool/browser/OS/hardware versions, seed, workload, start/end, target, calibration, retention, and deviations.
+
+Use the sample/percentile/comparison policy in [EXPERIMENT-METHODOLOGY](EXPERIMENT-METHODOLOGY.md). Small smokes prove function, not performance.
+
+The product foundation is complete only with an installed-wheel CLI, real local lab login and optional TOTP capability result, two isolated authenticated contexts, enforced queue/lease limits, timeout/cancellation/crash cleanup, an asserted local write scenario, a bounded Locust run, genuine reports, and executed lint/type/full applicable tests. Record any unavailable optional feature explicitly. Documentation completion alone does not meet this product gate.
