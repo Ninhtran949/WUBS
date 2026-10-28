@@ -75,6 +75,11 @@ jobs:
       - name: Build distributions
         run: uv build
 
+      - name: Provision runtime cache for offline wheel smoke
+        run: |
+          uv export --locked --offline --all-extras --no-dev --no-emit-project --format requirements.txt --output-file artifacts/runtime-requirements.txt
+          uv pip install --default-index https://pypi.org/simple --require-hashes --no-deps --only-binary :all: --reinstall --requirements artifacts/runtime-requirements.txt
+
       - name: Smoke installed wheel outside checkout
         run: |
           $builtWheels = @(Get-ChildItem -LiteralPath dist -Filter '*.whl')
