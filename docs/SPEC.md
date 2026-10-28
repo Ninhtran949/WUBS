@@ -39,6 +39,28 @@ Target scope records normalized exact origins (scheme, host, port), permitted sc
 
 Account metadata supports `account_id`, `username`, `password_ref`, optional `totp_secret_ref`, `network_profile` and `browser_profile`. References initially use explicitly named environment variables; legacy account formats require an explicit adapter and fixture, not guessed field mappings. Runtime credentials stay outside serializable domain results.
 
+### T02 static configuration contract
+
+Version 1 accepts a UTF-8 JSON/YAML object (at most 64 KiB, 32 nesting levels and 4,096 nodes). Duplicate mapping keys, aliases, nonstandard YAML tags, unknown fields, coercion of strings/bools into numbers and nonfinite numbers are rejected. Error output contains fixed categories/codes and schema field locations, never source excerpts or rejected values.
+
+Required fields are `schema_version: 1`, `engine`, `target.origin`, `scope.allowed_origins`, `scope.allowed_scenarios` and `scenarios` (objects with an `id` only). Browser inputs also require `accounts.catalog`; optional `accounts.include_ids` is a unique list of account IDs. Catalog contents and secrets are not loaded by T02. Seed defaults to 0 (0 through 2^63-1). Identifiers are bounded, duplicate selections are rejected, and scenario engine/capabilities cannot be overridden.
+
+The initial closed scenario metadata recognizes `LOGIN` for `browser` and `HTTP_HEALTH` for `http`. These are **static contracts, not available execution handlers**. T06/T09/T14 attach actual engines/handlers; later scenarios extend the trusted metadata when implemented. Unknown IDs, arbitrary module names, scenario parameters and unsupported profiles/session persistence fail validation.
+
+The supported target mode is `local_lab`. Exact origins use HTTP/HTTPS, literal `127.0.0.1` or `[::1]`, an explicit port 1-65535 and no credentials, query, fragment or non-root path. Normalization removes a trailing `/` and canonicalizes the scheme/port. The local scope must contain exactly the target origin and must permit the selected scenarios. External/owned-staging declarations remain blocked; validation never establishes target ownership or runtime readiness.
+
+Paths use portable relative components under the configuration directory, without `..`, drive/UNC/device/ADS syntax, shell metacharacters or reserved Windows names. The catalog ends in `.json`; `output_dir` defaults to `reports`. Paths are resolved against the config directory independently of CWD; existing symlink/junction/reparse components are rejected before following them. Only the configuration file is read. Missing catalog/output paths are allowed because catalog validation and durable output belong to T03/T04. Runtime adapters must recheck containment at use time.
+
+| Field | Default / static bounds |
+| --- | --- |
+| Browser `workload` | `mode: queue`, concurrency 2 (1-10 requested), per-origin concurrency 2 (1-10), queue size 10 (1-100), max cases 10 (1-10), navigation/action timeouts 15/5 s (0-15 s, positive), max attempts 2 (1-2). Requested concurrency is not resource admission. |
+| HTTP `workload` | `mode: constant`, users 2 (1-2), spawn rate 1 user/s (0-1, positive), max requests 100 (1-100), max RPS 5 (0-5, positive, burst 1), request timeout 5 s (0-15, positive). Higher loads/stages require later capacity/enforcement capabilities. |
+| `limits` | Max duration 60 s for browser / 30 s for HTTP (0-60, positive); shutdown timeout 30 s (0-30, positive), covering the longest operation plus a 5 s cleanup reserve. An operation or think-time bound cannot exceed run duration. |
+| `think_time` | `mode: none`; alternatively `fixed` with `delay_s` or `seeded_random` with `min_s`/`max_s` (defaults 3/7). Delays are finite 0-60 s and min <= max; T11 implements scheduling. |
+| `artifacts` | `capture: on_failure` (`on_failure`/`never`), retention 7 days (1-30). Capture/retention execution is a later capability. |
+
+`validate-config <file> --json` returns `ok`, `validation: static` and `execution_checked: false`; success summarizes the engine, normalized origin and scenario IDs. Failures return an error category and sanitized field/code issues. Exit 2 identifies malformed/unsupported configuration and exit 3 identifies blocked target/scope. Human output uses the same sanitized information. Validation creates no output, resolves no secrets and starts no process, browser, DNS lookup or HTTP request.
+
 ### Initial defaults
 
 These are configuration defaults, not measured hardware capacity. Only the Chromium/headless/isolation/concurrency values come directly from Task.md; remaining values are conservative SE/SA baseline choices to test and refine explicitly.
@@ -69,7 +91,7 @@ Higher loads require explicit configuration, a capacity calibration record, and 
 
 ## CLI contract
 
-Target commands (availability is recorded in PROJECT; currently only help/version exist):
+Target commands (availability is recorded in PROJECT; help/version and static validate-config are implemented):
 
 ```text
 stresslab doctor

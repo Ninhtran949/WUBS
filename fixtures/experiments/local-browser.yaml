@@ -1,0 +1,11 @@
+schema_version: 1
+engine: browser
+target:
+  origin: http://127.0.0.1:8765
+scope:
+  allowed_origins: [http://127.0.0.1:8765]
+  allowed_scenarios: [LOGIN]
+scenarios:
+  - id: LOGIN
+accounts:
+  catalog: accounts.synthetic.json

@@ -38,6 +38,8 @@ Status: target conventions for future product code. [PROJECT](PROJECT.md) distin
 
 ## Tests and quality gates
 
+- Create baseline CI with package bootstrap, before feature implementation, and extend it in the same change as each new dependency, browser/lab capability, or required regression test. Do not wait for the full product to automate the checks already available; T19 is final pipeline qualification. The gate and evidence boundary are recorded in [ADR-0003](adr/0003-ci-at-bootstrap.md).
+
 | Test location (planned) | Responsibility |
 | --- | --- |
 | `tests/unit/` | Pure rules, config, classifications, timing, aggregation. No network/browser. |
@@ -49,6 +51,8 @@ Status: target conventions for future product code. [PROJECT](PROJECT.md) distin
 
 - Write the meaningful regression/behavior test first for new logic; see it fail for the expected reason. Use a fake only at an external seam; include a real-adapter test for lifecycle guarantees that a fake cannot prove.
 - Register `unit`, `architecture`, `integration`, `e2e`, `fault_injection`, and `load` markers with strict marker checking. Default full product CI runs required local tests; no credentials or external targets. Expensive soak/load runs are separately bounded and explicitly selected.
+- The push/PR baseline selects `not load`; ordinary unit/architecture/integration/E2E/fault regression tests remain required. Reserve `load` for explicitly selected load experiments, never to hide an ordinary regression or a failing required gate. Browser/lab provisioning must be added when those tests first arrive; missing required capabilities fail visibly.
+- Hosted success requires actual run/commit/job/artifact evidence on both baseline platforms. Local commands or valid YAML alone do not complete T01a. Keep actions SHA-pinned, `contents: read`, checkout credentials unpersisted, bounded timeouts, and no secret-dependent or external-target tests on untrusted PR code.
 - Async application tests use explicit pytest-asyncio loop scopes. Adopt the upstream async Playwright fixtures only where appropriate; do not mix sync browser objects into async controller tests or change the Windows loop policy to make a fixture pass.
 - Use deterministic clocks/seeds/barriers for race tests; no timing-sensitive arbitrary sleeps as assertions. Cover cleanup and unknown outcomes, not only successful output.
 - Follow the commands in PROJECT. The release gate includes lint, format, mypy, the full applicable suite, coverage with critical-branch review, wheel installation, and the SPEC foundation acceptance. A selected subset is reported as that subset.

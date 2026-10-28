@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Bounded UI reliability experiments against a local synthetic lab"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["pydantic==2.14.1", "PyYAML==6.0.3"]
 
 [project.scripts]
 stresslab = "web_stress_lab.interfaces.cli:main"
@@ -20,6 +20,7 @@ dev = [
     "pytest-asyncio==1.4.1",
     "pytest-cov==7.1.0",
     "ruff==0.17.3",
+    "types-PyYAML==6.0.12.20260906",
 ]
 
 [tool.setuptools.packages.find]

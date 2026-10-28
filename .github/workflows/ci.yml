@@ -1,0 +1,96 @@
+name: CI
+
+"on":
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      UV_NO_PROGRESS: "1"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.6"
+          enable-cache: true
+          cache-dependency-glob: |
+            .python-version
+            pyproject.toml
+            uv.lock
+
+      - name: Install project Python
+        run: uv python install ((Get-Content -LiteralPath .python-version -Raw).Trim())
+
+      - name: Check lockfile
+        run: uv lock --check
+
+      - name: Install locked environment
+        run: uv sync --locked --all-extras --group dev --no-build
+
+      - name: Show Python version
+        run: uv run --locked --all-extras --group dev python --version
+
+      - name: Lint
+        run: uv run --locked --all-extras --group dev ruff check .
+
+      - name: Check formatting
+        run: uv run --locked --all-extras --group dev ruff format --check .
+
+      - name: Check types
+        run: uv run --locked --all-extras --group dev mypy src/
+
+      - name: Verify harness
+        run: uv run --locked --all-extras --group dev python -B scripts/verify_harness.py
+
+      - name: Tests (non-load)
+        run: >-
+          uv run --locked --all-extras --group dev python -m pytest -q
+          -m "not load" --cov --cov-report=term-missing
+          --cov-report=xml:artifacts/coverage.xml --junitxml=artifacts/junit.xml
+
+      - name: Build distributions
+        run: uv build
+
+      - name: Smoke installed wheel outside checkout
+        run: |
+          $builtWheels = @(Get-ChildItem -LiteralPath dist -Filter '*.whl')
+          if ($builtWheels.Count -ne 1) { throw 'Expected exactly one built wheel' }
+          $uvExecutable = (Get-Command uv -CommandType Application).Source
+          uv run --locked --all-extras --group dev python scripts/smoke_wheel.py ($builtWheels[0].FullName) --uv $uvExecutable
+
+      - name: Upload test and build evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-${{ matrix.os }}
+          path: |
+            artifacts/junit.xml
+            artifacts/coverage.xml
+            dist/*.whl
+            dist/*.tar.gz
+          if-no-files-found: warn
+          retention-days: 7

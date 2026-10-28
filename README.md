@@ -5,7 +5,8 @@ local target. The implementation is tracked in
 [the implementation plan](docs/plans/implementation-plan.md); see
 [PROJECT](docs/PROJECT.md) for verified capabilities, commands and limitations.
 
-The initial package provides `stresslab --help` and `stresslab --version`.
+The package provides `stresslab --help`, `stresslab --version` and static
+`stresslab validate-config <file> --json` validation for bounded local experiments.
 Browser, lab and load commands are added only when their implementation gates pass.
 External experiments require separate authorization and enforcement.
 
@@ -16,10 +17,21 @@ environment and invoke the CLI from the workspace root:
 uv sync --locked --all-extras --group dev
 uv run --locked stresslab --help
 uv run --locked stresslab --version
+uv run --locked stresslab validate-config fixtures/experiments/local-browser.yaml --json
+uv run --locked stresslab validate-config fixtures/experiments/local-http.json --json
 ```
 
 In the current workspace, uv is available as `.tools/uv.exe`; the toolchain
 provenance and verification commands are recorded in [PROJECT](docs/PROJECT.md).
+
+Validation reads only the config file, creates no reports and does not resolve
+secrets or start an engine. The examples declare future `LOGIN`/`HTTP_HEALTH`
+workloads; they do not establish runtime readiness or validate catalog contents.
+See the [T02 input contract](docs/SPEC.md#t02-static-configuration-contract).
+T02's fresh installed-console smoke passed on 2026-10-28, including clean installs
+under the project directory and in temp. The earlier Windows Application Control
+block is documented in the [gate evidence](docs/plans/gate-qualification-2026-10-28.md).
+T02 remains unchecked pending T01a's hosted qualification.
 
 The [baseline CI workflow](.github/workflows/ci.yml) is prepared for push/PR checks
 on Ubuntu and Windows: locked install, lint/format/types, ordinary tests, harness
