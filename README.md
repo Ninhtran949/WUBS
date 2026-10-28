@@ -31,11 +31,13 @@ See the [T02 input contract](docs/SPEC.md#t02-static-configuration-contract).
 T02's fresh installed-console smoke passed on 2026-10-28, including clean installs
 under the project directory and in temp. The earlier Windows Application Control
 block is documented in the [gate evidence](docs/plans/gate-qualification-2026-10-28.md).
-T02 remains unchecked pending T01a's hosted qualification.
+T01a and T02 are complete for their declared scope on `dev`; later runtime
+capabilities and full release qualification remain pending.
 
 The [baseline CI workflow](.github/workflows/ci.yml) is prepared for push/PR checks
 on Ubuntu and Windows: locked install, lint/format/types, ordinary tests, harness
 verification, build and fresh-wheel smoke. Each feature extends that pipeline.
-T01a's first successful hosted run remains pending authorized publication; local
-checks do not establish hosted CI success. See [PROJECT](docs/PROJECT.md).
+T01a passed [hosted CI run 40669673712](https://github.com/Ninhtran949/WUBS/actions/runs/40669673712)
+on Ubuntu and Windows: 192 tests per platform, build, offline installed-console
+smoke and test/build artifacts. See [PROJECT](docs/PROJECT.md).
 

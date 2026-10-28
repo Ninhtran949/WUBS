@@ -1,22 +1,23 @@
 # T02 fresh-console and T01a hosted evidence, 2026-10-28
 
-This initially records the investigation before the Owner's subsequent authorization
-to commit and push directly to `dev`; historical results below retain that scope.
-Product code, tests,
-dependencies, workflow and acceptance criteria were preserved. No commit, push,
-dispatch, deployment, Windows Security setting or security policy was changed.
-Raw machine-local evidence is ignored under `.local/gate-qualification-20261028/`;
-the findings below do not depend on those files being shipped in a checkout.
+T01a and T02 are now qualified on `dev`; the [hosted closure evidence](#t01a-hosted-qualification-on-dev)
+below records actual run, commit, job, log and artifact results. The Owner authorized
+commits and direct pushes to `dev`. Product code, tests, dependencies, the smoke
+script and acceptance criteria were preserved during hosted qualification; the CI
+fix adds explicit runtime-cache provisioning. No merge, PR, deployment, Windows
+Security setting or security policy was changed. Raw machine-local evidence is
+ignored under `.local/gate-qualification-20261028/` and
+`.local/t01a-hosted-20261028/`; this report retains the reviewable findings.
 
 | Gate | Observed result | Remaining condition |
 | --- | --- | --- |
-| T02 fresh-console smoke | **PASS locally**, using the unchanged required script and real executable | Does not establish hosted or release qualification. |
-| T01a hosted CI | **BLOCKED**, zero hosted runs | Authorized publication, then actual successful Ubuntu and Windows jobs with evidence. |
+| T02 fresh-console smoke | **PASS locally and on hosted Ubuntu/Windows**, using the unchanged required script and real executable | No open gate within T02's static-contract scope. |
+| T01a hosted CI | **PASS**, actual successful Ubuntu/Windows run `40669673712` | No open gate within T01a's baseline-CI scope. |
 
-T02's task checkbox remains open because it depends on T01a. Release is **not ready**.
-The earlier failed smoke attempts remain recorded in the implementation checkpoint.
+T01a and T02 task checkboxes are closed. Release is **not ready**: later capabilities
+and foundation qualification remain pending. Earlier failed attempts remain recorded.
 
-## T01a: actual GitHub state
+## T01a: pre-publication snapshot
 
 Read-only GitHub checks at 2026-10-28 09:43 UTC returned:
 
@@ -36,16 +37,13 @@ SHA-pinned actions, unpersisted checkout credentials, Ubuntu/Windows matrix jobs
 15-minute timeouts, locked install, lint/format/types, harness, ordinary tests,
 isolated build, native-console wheel smoke and narrowly selected artifacts.
 `actionlint -no-color .github/workflows/ci.yml` exited 0. Local command results
-below establish preparation only; hosted action setup, Linux execution and
-artifact upload remain unverified.
+below established preparation only at that checkpoint; hosted action setup, Linux
+execution and artifact upload were then unverified.
 
-The workflow and T02 code are uncommitted changes above local HEAD. An authorized
-commit/push must publish the complete reviewed revision, including workflow,
-lockfile, source and required documents. A push can then trigger CI; record its
-actual run URL and tested commit SHA, successful `Checks (ubuntu-24.04)` and
-`Checks (windows-2025)` jobs, test results and `ci-ubuntu-24.04` /
-`ci-windows-2025` artifact links before closing T01a. No publication or dispatch
-was attempted, and no speculative run URL is presented as evidence.
+At that snapshot the workflow and T02 revision were uncommitted, publication
+was unauthorized and no hosted evidence existed. The Owner subsequently approved
+direct publication to `dev`. The completed qualification below supersedes this
+historical pending status without treating local checks as hosted evidence.
 
 ## T02: controlled launcher comparison
 
@@ -164,13 +162,70 @@ CodeIntegrity exports, `original-console-smoke.log`, `local-checks.json`,
 coverage XML. Raw exports and retained
 diagnostic environments remain local and ignored.
 
-Final inspection confirmed unchanged HEAD, staged diff and lockfile against the
-starting snapshot; only README, PROJECT, the relevant checkpoint and this evidence
-report changed in the deliverable. Documentation link and Git whitespace checks
-passed. No source/test refactor was needed.
+Before publication, final inspection confirmed unchanged HEAD, staged diff and
+lockfile against that investigation's starting snapshot; only README, PROJECT,
+the checkpoint and this report changed at that stage. Documentation link and Git
+whitespace checks passed. No source/test refactor was needed.
 
-The strict console criterion is met in the observed runs, so no acceptance
-change is proposed or applied. If OS enforcement blocks future clean installs,
-retain the failure and obtain an Owner-approved environmental/acceptance ruling;
-do not silently substitute module execution or mark a blocked console gate PASS.
-Hosted CI and release remain unqualified.
+The strict console criterion is met in the observed runs; no acceptance change
+was applied. If OS enforcement blocks future clean installs, retain the failure
+and obtain an Owner-approved environmental/acceptance ruling; do not silently
+substitute module execution or mark a blocked console gate PASS.
+
+## T01a hosted qualification on dev
+
+Qualified implementation commit: **`09dc45d770e641802b400bdfec68f34c63494d04`**.
+[Run 40669673712](https://github.com/Ninhtran949/WUBS/actions/runs/40669673712)
+is completed/success for a push to `dev`. The [workflow at that exact revision](https://github.com/Ninhtran949/WUBS/blob/09dc45d770e641802b400bdfec68f34c63494d04/.github/workflows/ci.yml)
+retains push/PR/manual triggers and both required matrix platforms.
+
+| Hosted job / logs | Job status | Verified tests | Console smoke | Test/build artifact |
+| --- | --- | --- | --- | --- |
+| [Checks (ubuntu-24.04), job 122752966830](https://github.com/Ninhtran949/WUBS/actions/runs/40669673712/job/122752966830) | completed / success | 192; zero failures/errors/skips; 97% coverage | PASS, actual offline console | [ci-ubuntu-24.04, ID 12808031811](https://github.com/Ninhtran949/WUBS/actions/runs/40669673712/artifacts/12808031811) |
+| [Checks (windows-2025), job 122752967048](https://github.com/Ninhtran949/WUBS/actions/runs/40669673712/job/122752967048) | completed / success | 192; zero failures/errors/skips; 97% coverage | PASS, actual offline console | [ci-windows-2025, ID 12808180744](https://github.com/Ninhtran949/WUBS/actions/runs/40669673712/artifacts/12808180744) |
+
+Both jobs passed locked installation, Ruff/format, strict mypy, harness integrity,
+ordinary tests, isolated build, runtime-cache provisioning, fresh wheel smoke and
+artifact upload. Job logs show `PASS: installed wheel 0.1.0, hashed locked runtime deps, CLI help/version/static validation, isolated import`.
+Full job logs were retrieved and retained locally. No required test was skipped.
+
+Both uploaded ZIPs were downloaded and their SHA-256 digests matched the GitHub API:
+
+- Ubuntu: `2b4dbffa73e27bf5c7428abd4b6c55ef62837c57319edae49450c04cc92e1c76`.
+- Windows: `3a9f380f34270aaeeffc46766cf2809c36b4b5e0e9f503c6e03fb21d8a98571a`.
+
+Each archive contains exactly JUnit XML, coverage XML, one wheel and one source
+archive. Parsed JUnit confirms 192 tests with zero failures/errors/skips on each
+platform. Coverage XML records 380/388 lines and 94/100 branches; combined coverage
+reported by pytest is 97%. Hosted artifacts have seven-day retention, expiring
+2026-11-04; downloaded copies and validation JSON remain local and ignored.
+
+The [first run, 40668833252](https://github.com/Ninhtran949/WUBS/actions/runs/40668833252),
+at `cd4c4e9fa88a750149acb942e2e3ef052dde9a11`, failed on both platforms before
+launcher execution: the offline named-requirements install lacked registry cache
+data for `annotated-types`. All 192 tests and build passed in both failed jobs;
+that does not relabel the run as successful or establish a Windows policy block.
+
+A new-cache regression reproduced that exact failure after locked sync/build.
+Exporting the full locked runtime graph and reinstalling only prebuilt wheels
+with mandatory hashes populated the missing cache data; the same unchanged
+offline smoke then passed. The workflow now performs that provisioning before
+smoke. [uv documents distinct cache behavior for registry and direct-URL dependencies](https://docs.astral.sh/uv/concepts/cache/).
+The fix changes five workflow lines; no product code, tests, lockfile, smoke
+assertions, offline validation or acceptance criteria were relaxed.
+
+Before publication, Gitleaks 8.30.1 was obtained from its official release and
+verified against both its API digest and release checksums (archive SHA-256
+`d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e`).
+It reported zero secrets across the 61-file publication tree, existing history
+and staged revisions. The starting 24 changed/new files were preserved and
+published. Raw logs, ZIPs, redacted scan reports, tool provenance, cold-cache
+RED/GREEN results and parsed artifact results are under
+`.local/t01a-hosted-20261028/`.
+
+T01a is closed on actual hosted success; T02's previously unmet dependency is now
+satisfied, so its static-contract task is closed as well. `main` remains
+`035311b6f66a88839c4616a9954c35f72d99a7ab`; no force-push, merge, PR or deployment
+was performed. T03-T20 and full release acceptance remain pending. Successful
+hosted Windows smoke does not explain the earlier local policy decision or
+guarantee that Windows Application Control will allow every future installation.
