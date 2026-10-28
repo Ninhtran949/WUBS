@@ -61,6 +61,75 @@ Paths use portable relative components under the configuration directory, withou
 
 `validate-config <file> --json` returns `ok`, `validation: static` and `execution_checked: false`; success summarizes the engine, normalized origin and scenario IDs. Failures return an error category and sanitized field/code issues. Exit 2 identifies malformed/unsupported configuration and exit 3 identifies blocked target/scope. Human output uses the same sanitized information. Validation creates no output, resolves no secrets and starts no process, browser, DNS lookup or HTTP request.
 
+### T03 identity catalog and secret references
+
+The catalog is a bounded UTF-8 JSON object with `schema_version: 1` and `accounts`
+(1-100 entries). It uses the same 64 KiB / depth / node / duplicate-key / local
+regular-file guards as experiment inputs. YAML catalogs, legacy arrays or legacy
+field names, unknown fields and inline credential values are rejected explicitly;
+no implicit migration or field guessing is supported.
+
+Each account requires `account_id`, `username` and `password_ref`. IDs follow the
+experiment identifier contract. Usernames are 1-128 Unicode characters without
+ASCII controls or surrounding whitespace. IDs and exact usernames must be unique
+throughout the catalog, including entries excluded by a filter. No case folding is
+inferred. Optional `totp_secret_ref` is metadata only; TOTP execution belongs to T12.
+Profile references initially accept only `network_profile: direct` and
+`browser_profile: default` (also the defaults); T08 adds executable profiles.
+
+Secret references have the exact form `env:NAME`, where NAME is 1-128 portable
+environment-name characters (`[A-Za-z_][A-Za-z0-9_]*`). The provider reads only the
+explicitly named variable, without enumeration, interpolation, file loading or
+fallback names. Invalid references and absent/empty values raise sanitized
+`AccountValidationError` issues with exit 2; values and variable names are excluded
+from diagnostics. Resolved values stay outside account/domain result objects.
+
+`load_accounts(path, include_ids=...)` validates the entire catalog before
+filtering. Its Python API takes an ID tuple (the experiment parser converts its
+JSON/YAML ID list); an empty tuple selects all entries and duplicate/unknown IDs fail.
+Selection preserves catalog order independently of requested-ID order and does
+not read secrets, create outputs, start processes or access the network.
+T02's `validate-config` continues to read only the experiment file. Runtime
+scope/admission/lease ordering before secret resolution is tested in T06/T07.
+
+### T04 initial durable results and read-only reports
+
+T04 adds the first storage slice: an exclusive `reports/<run_id>/` directory,
+version-1 `manifest.json` and append-only `cases.jsonl`, followed by atomically
+published `summary.json` and escaped `report.html`. CSV, extracted failures,
+structured engine events and richer measurements arrive with their later tasks;
+the foundation report contract below remains required. T04 data is explicitly
+`data_source: synthetic`; it does not claim engine observations or benchmarks.
+
+A manifest records run ID, engine/origin/seed, planned case count (1-100), UTC
+start/end, Python/package/OS provenance, run status and `reporting_complete`.
+Initial RUNNING manifests are incomplete. Successful finalization publishes the
+derived reports before the final manifest. A summary/HTML write failure preserves
+raw outcomes, attempts a FAILED/incomplete manifest with a fixed reporting code,
+and raises `ReportingError`. If that update also fails, the initial incomplete
+manifest remains evidence; it never implies success.
+
+Terminal case outcomes record case/scenario IDs, attempt (1-2, or 0 before starting), optional opaque
+account reference (`acct_` plus 32 lowercase hex characters), UTC timestamps,
+terminal status, duration in seconds or an explicit unavailability reason, fixed
+error category and confirmed/unknown effect. No username, credential/reference,
+raw exception message or arbitrary payload field is persisted. Duplicate case IDs
+and outcomes beyond the plan fail; retry-attempt telemetry is a later extension.
+COMPLETED finalization requires every planned case to be recorded as COMPLETED
+with confirmed effects. Other terminal/partial statuses preserve missing counts.
+
+The writer uses one owned run directory, bounded records, flushed raw appends and
+atomic derived writes. Existing run IDs are never reused; traversal, links/reparse
+components, malformed records, collisions and I/O failures produce sanitized
+`ReportingError` issues (exit 4). This is one-writer local storage; runtime lock,
+recovery/admission and account-pseudonym creation are T06/T07 integration gates.
+
+`report <run_id> [--root reports] [--json]` reads and validates existing records
+without creating files, resolving secrets or starting engines/network work. It
+shows persisted status, synthetic source, completeness and counts, including
+unrecorded cases. A RUNNING/incomplete manifest is shown as unfinalized; the reader
+does not guess whether a process is alive or silently mark it INTERRUPTED.
+
 ### Initial defaults
 
 These are configuration defaults, not measured hardware capacity. Only the Chromium/headless/isolation/concurrency values come directly from Task.md; remaining values are conservative SE/SA baseline choices to test and refine explicitly.

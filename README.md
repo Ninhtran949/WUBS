@@ -34,6 +34,13 @@ block is documented in the [gate evidence](docs/plans/gate-qualification-2026-10
 T01a and T02 are complete for their declared scope on `dev`; later runtime
 capabilities and full release qualification remain pending.
 
+T03 adds a strict JSON account-catalog API, deterministic ID filtering and an
+explicit environment secret provider. The [synthetic catalog](fixtures/experiments/accounts.synthetic.json)
+contains references only; set synthetic values in the process environment.
+See the [T03 contract](docs/SPEC.md#t03-identity-catalog-and-secret-references)
+and [API usage](docs/PROJECT.md#identity-catalog-and-secret-provider-apis).
+This new revision has not been published or qualified by hosted CI.
+
 The [baseline CI workflow](.github/workflows/ci.yml) is prepared for push/PR checks
 on Ubuntu and Windows: locked install, lint/format/types, ordinary tests, harness
 verification, build and fresh-wheel smoke. Each feature extends that pipeline.

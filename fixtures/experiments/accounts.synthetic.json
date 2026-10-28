@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "accounts": [
+    {
+      "account_id": "synthetic-001",
+      "username": "synthetic-user-001",
+      "password_ref": "env:STRESSLAB_TEST_PASSWORD"
+    },
+    {
+      "account_id": "synthetic-002",
+      "username": "synthetic-user-002",
+      "password_ref": "env:STRESSLAB_TEST_PASSWORD_2",
+      "totp_secret_ref": "env:STRESSLAB_TEST_TOTP_SECRET_2",
+      "network_profile": "direct",
+      "browser_profile": "default"
+    }
+  ]
+}

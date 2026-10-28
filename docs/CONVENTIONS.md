@@ -59,6 +59,14 @@ Status: target conventions for future product code. [PROJECT](PROJECT.md) distin
 - Do not add arbitrary coverage percentages before measuring the suite. Require direct evidence for exclusivity, scope, cancellation, idempotency, and redaction; a high aggregate percentage cannot substitute for them.
 - Keep test execution serial initially. Optional pytest-xdist needs isolated ports, data, report roots, and identity catalogs; it is not the product worker pool. Benchmark qualification remains serial with controlled host load.
 
+## Commit messages
+
+When a commit is authorized, include its task ID and describe the actual completed
+change using `type(T0x): description`, for example
+`feat(T03): add identity catalog validation and environment secret provider` or
+`fix(T01a): provision hashed runtime cache before offline wheel smoke`.
+Commit/push authorization remains separate from the message convention.
+
 ## Agent checkpoint
 
 Before code: state the assigned requirement/task, affected boundaries, acceptance criteria, and checks. For a substantial task, update the existing plan checkpoint instead of creating another task list.

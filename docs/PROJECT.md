@@ -4,7 +4,7 @@
 
 As of 2026-10-28, [Task.md](../Task.md) supplies requirements for an automated UI reliability and performance testing framework. T01's local bootstrap/review fixes were verified. T01a and T02 are now complete for their declared scope on `dev`: [hosted run 40669673712](https://github.com/Ninhtran949/WUBS/actions/runs/40669673712) passed both Ubuntu and Windows on commit `09dc45d770e641802b400bdfec68f34c63494d04`. Each platform passed 192 ordinary tests (97% coverage), locked lint/format/types, harness, isolated build and the unchanged fresh native-console wheel smoke. T02 provides bounded static YAML/JSON validation into immutable domain values and sanitized human/JSON results. Clean console installs under the local project directory and in temp also pass. This is not whole-foundation or release qualification.
 
-The Owner authorized commits and direct pushes to `origin/dev` to complete T01a and update T02's dependency status. Existing work was preserved and published; `main` remains `035311b6f66a88839c4616a9954c35f72d99a7ab`. No merge, PR or deployment was performed. T03-T20 remain pending and no later feature work was started. There is no local lab, browser engine or Locust adapter yet. See the [gate evidence](plans/gate-qualification-2026-10-28.md) for launcher comparison, Windows events, actual hosted jobs/logs and validated test/build artifacts.
+T03 is complete locally on Windows: strict catalog metadata, deterministic filtering and an application-owned environment-secret seam. Its ordinary suite passes 285 tests with 98% coverage; locked lint/format/types, harness, isolated build and fresh installed-wheel console/catalog/provider smoke pass. Gitleaks found zero secrets in the 71-file deliverable tree, and an independent focused review reported no material P1/P2 findings. The prior T01a/T02 hosted evidence above does not qualify the new uncommitted T03 revision. T04-T20 remain pending. There is no local lab, browser engine or Locust adapter yet. Earlier commit/push authorization covered T01a; no T03 commit, push, merge, PR or deployment was performed. `main` remains `035311b6f66a88839c4616a9954c35f72d99a7ab`. See the [checkpoint](plans/implementation-plan.md#t03-local-completion-checkpoint-2026-10-28) for current packaging/security evidence and the [earlier gate report](plans/gate-qualification-2026-10-28.md) for hosted baseline and Windows events.
 
 The system Python remains 3.11.9. Workspace-local tools provide CPython 3.12.16, uv 0.13.6, and a Python 3.12.16 `.venv`; no global Python or PATH setting was changed. Dev tools remain mypy 2.4.0, pytest 9.1.1, pytest-asyncio 1.4.1, pytest-cov 7.1.0 and Ruff 0.17.3, with types-PyYAML 6.0.12.20260906 added for strict checking. Runtime dependencies are Pydantic 2.14.1 and PyYAML 6.0.3. `uv.lock` resolves 23 packages including the project and transitive dependencies; setuptools 84.2.1 remains the separate exact build-system pin. The project `.venv` was synchronized with `--locked --no-build`. Baseline Linux/Windows CI is verified; later runtime capabilities remain unverified.
 
@@ -57,6 +57,50 @@ $env:UV_CACHE_DIR = Join-Path $PWD '.tools/cache'
 The build uses an isolated environment with the pinned setuptools backend. Existing `dist/` artifacts denied access/overwrite (WinError 5); T02 qualification used fresh output directories under `.tools/`, preserving the old artifacts. The build's local-cache warning is checked by archive inspection.
 
 The updated `scripts/smoke_wheel.py` exports the complete runtime graph from `uv.lock`, adds the built wheel's SHA-256, installs only hashed prebuilt wheels offline, and runs `uv pip check` before invoking the real console. `--no-deps` uses the already-complete export and avoids uncached PEP 658 metadata requests; it does not omit the graph check. The required script passes locally and on both hosted platforms. A fresh cache requires registry data as well as wheel content: the workflow explicitly exports and reinstalls the complete hashed runtime graph online before the unchanged offline smoke. A cold-cache regression reproduced the failure before provisioning and passed afterward. Earlier WinError 4551 failures remain historical evidence; no fallback, skip, acceptance change or Windows security-policy modification was introduced. Separate module diagnostics do not substitute for console acceptance.
+
+## Identity catalog and secret provider APIs
+
+T03 uses the [versioned JSON catalog contract](SPEC.md#t03-identity-catalog-and-secret-references)
+and adds `fixtures/experiments/accounts.synthetic.json` without changing the two
+existing experiment fixtures. Parse/select metadata separately from credential
+resolution:
+
+```python
+from pathlib import Path
+
+from web_stress_lab.interfaces.accounts import load_accounts
+from web_stress_lab.interfaces.configuration import load_experiment
+
+experiment = load_experiment(Path("fixtures/experiments/local-browser.yaml"))
+assert experiment.accounts is not None
+accounts = load_accounts(
+    experiment.accounts.catalog,
+    include_ids=experiment.accounts.include_ids,
+)
+```
+
+This reads only the two local documents and returns immutable metadata in catalog
+order. The static CLI continues to read only the experiment. The catalog rejects
+legacy/plaintext schemas, duplicate IDs/exact usernames, bad references/profiles,
+unsafe file paths and invalid excluded rows. Invalid filters fail explicitly.
+Usernames and references are omitted from account reprs, and errors expose fixed
+categories/field codes without rejected values.
+
+`application.ports.SecretProvider` is implemented by
+`infrastructure.secrets.EnvironmentSecretProvider`. Its `resolve("env:NAME")`
+method reads only NAME and returns its exact nonempty value without logging,
+enumerating the environment, loading `.env` files or caching credentials.
+`.env.example` contains placeholders only; the operator sets synthetic process
+variables. Missing values and malformed references raise sanitized
+`AccountValidationError` issues. T06/T07 must enforce scope/admission/lease ordering
+at the runtime call site; T12 implements optional TOTP generation. The current
+profile names `direct`/`default` are validated metadata, not active browser/network
+profile implementations.
+
+The existing CI discovers the new tests automatically. Its installed-wheel smoke
+also exercises catalog selection and the real environment adapter with one
+synthetic value inside the fresh child environment; all earlier offline/hash,
+dependency-graph, actual-console and isolation assertions remain required.
 
 ## Toolchain provenance and lock verification
 

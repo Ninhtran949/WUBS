@@ -125,15 +125,40 @@ def main() -> None:
         assert validation.returncode == 0, validation.stderr
         validated = json.loads(validation.stdout)
         assert validated["ok"] is True and validated["execution_checked"] is False
+        catalog = root / "accounts.synthetic.json"
+        catalog.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "accounts": [
+                        {
+                            "account_id": "wheel-smoke",
+                            "username": "synthetic-wheel-smoke",
+                            "password_ref": "env:STRESSLAB_WHEEL_SMOKE_PASSWORD",
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        environment["STRESSLAB_WHEEL_SMOKE_PASSWORD"] = "wheel-smoke-only"
         check = subprocess.run(
             [
                 str(python),
                 "-I",
                 "-c",
-                "from pathlib import Path; import web_stress_lab; "
+                "import sys; from pathlib import Path; import web_stress_lab; "
                 "assert 'site-packages' in Path(web_stress_lab.__file__).parts; "
+                "from web_stress_lab.interfaces.accounts import load_accounts; "
+                "from web_stress_lab.infrastructure.secrets "
+                "import EnvironmentSecretProvider; "
+                "accounts = load_accounts(Path(sys.argv[1]), "
+                "include_ids=('wheel-smoke',)); assert len(accounts) == 1; "
+                "assert EnvironmentSecretProvider().resolve(accounts[0].password_ref) "
+                "== 'wheel-smoke-only'; "
                 "from importlib.metadata import version; "
                 "print(version('web-stress-lab'))",
+                str(catalog),
             ],
             cwd=root,
             env=environment,
@@ -144,7 +169,7 @@ def main() -> None:
         )
         print(
             f"PASS: installed wheel {check.stdout.strip()}, hashed locked runtime deps, "
-            "CLI help/version/static validation, isolated import"
+            "CLI help/version/static validation, catalog/secret provider, isolated import"
         )
 
 

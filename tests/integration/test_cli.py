@@ -33,6 +33,58 @@ def test_help_describes_available_capability(tmp_path: Path) -> None:
     assert "--version" in result.stdout
 
 
+def test_report_reads_synthetic_outcomes_outside_checkout(tmp_path: Path) -> None:
+    from web_stress_lab.domain.results import CaseOutcome
+    from web_stress_lab.infrastructure.storage import FileResultSink
+    from web_stress_lab.interfaces.configuration import load_experiment
+
+    fixture = Path(__file__).resolve().parents[2] / "fixtures/experiments/local-browser.yaml"
+    sink = FileResultSink(tmp_path / "reports")
+    manifest = sink.start(load_experiment(fixture), "synthetic-cli", planned_cases=1)
+    sink.record(CaseOutcome("case-1", "LOGIN", "COMPLETED", manifest.started_at,
+                            manifest.started_at, 0.25))
+    sink.finish("COMPLETED")
+    root = tmp_path / "reports" / manifest.run_id
+    before = {path.name: path.read_bytes() for path in root.iterdir()}
+    result = invoke(tmp_path, "report", manifest.run_id, "--json")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True and payload["read_only"] is True
+    assert payload["report"]["data_source"] == "synthetic"
+    assert payload["report"]["recorded_cases"] == 1
+    assert payload["report"]["reporting_complete"] is True
+    assert {path.name: path.read_bytes() for path in root.iterdir()} == before
+    human = invoke(tmp_path, "report", manifest.run_id)
+    assert human.returncode == 0
+    assert "COMPLETED" in human.stdout and "synthetic" in human.stdout
+
+
+def test_report_missing_or_unsafe_run_is_redacted_exit_four(tmp_path: Path) -> None:
+    for run_id in ("missing", "../SECRET_CANARY"):
+        result = invoke(tmp_path, "report", run_id, "--json")
+        assert result.returncode == 4
+        payload = json.loads(result.stdout)
+        assert payload["ok"] is False
+        assert payload["error"]["category"] == "ReportingError"
+        assert "SECRET_CANARY" not in result.stdout + result.stderr
+    assert not (tmp_path / "reports").exists()
+
+
+def test_report_partial_manifest_does_not_claim_execution_success(tmp_path: Path) -> None:
+    from web_stress_lab.infrastructure.storage import FileResultSink
+    from web_stress_lab.interfaces.configuration import load_experiment
+
+    fixture = Path(__file__).resolve().parents[2] / "fixtures/experiments/local-browser.yaml"
+    FileResultSink(tmp_path / "reports").start(load_experiment(fixture), "partial", planned_cases=2)
+    result = invoke(tmp_path, "report", "partial", "--json")
+    assert result.returncode == 0
+    report = json.loads(result.stdout)["report"]
+    assert report["status"] == "RUNNING"
+    assert report["reporting_complete"] is False
+    assert report["unrecorded_cases"] == 2
+    assert not (tmp_path / "reports/partial/summary.json").exists()
+
+
 def test_version_matches_installed_distribution(tmp_path: Path) -> None:
     result = invoke(tmp_path, "--version")
     assert result.returncode == 0, result.stderr

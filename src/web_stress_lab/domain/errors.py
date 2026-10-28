@@ -22,3 +22,16 @@ class ConfigurationError(Exception):
 class ScopeViolationError(ConfigurationError):
     message = "Experiment scope is blocked."
     exit_code = 3
+
+
+class AccountValidationError(ConfigurationError):
+    message = "Invalid account catalog or secret reference."
+
+
+class ReportingError(Exception):
+    message = "Run reporting failed."
+    exit_code = 4
+
+    def __init__(self, issues: Sequence[InputIssue]) -> None:
+        self.issues = tuple(issues)
+        super().__init__(self.message)
