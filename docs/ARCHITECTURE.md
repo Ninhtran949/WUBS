@@ -24,6 +24,7 @@ Arrows inside the Python package express code dependencies; the last two arrows 
 
 | Owner | Allowed dependencies | Must not depend on |
 | --- | --- | --- |
+| Package-root modules | Standard library; `__main__.py` may dispatch to interfaces | Third-party frameworks and controller implementations in root helpers; Locust/gevent |
 | `domain/` | Standard library; domain itself | Application, adapters, interfaces, lab, Pydantic, browser/load/web/CLI frameworks |
 | `application/` | Domain, application-owned ports, standard library/Asyncio | Playwright, Locust/gevent, concrete files/secrets/storage, CLI/config schemas, lab internals |
 | `infrastructure/` | Application ports, domain, required libraries | Interfaces; other adapters via implicit globals |
@@ -32,6 +33,8 @@ Arrows inside the Python package express code dependencies; the last two arrows 
 | `lab_app/` | FastAPI and its own synthetic fixtures/state | Controller domain, orchestrator, scenario implementations |
 
 AST tests resolve absolute and relative imports and enforce this matrix, including optional/type-checking imports and imports hidden in helper modules. Add a failing architecture test before relaxing a boundary; a necessary change requires ADR review.
+
+Locust/gevent imports are confined to the exact `web_stress_lab.infrastructure.load.workload` module/package and its dot-separated descendants. A similar name such as `workload_controller` does not grant permission.
 
 ## Target layout
 

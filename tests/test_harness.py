@@ -19,7 +19,7 @@ class HarnessVerificationTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[1]
         for directory in (".agents", "docs"):
             shutil.copytree(source / directory, self.root / directory)
-        for filename in ("AGENTS.md", ".gitattributes"):
+        for filename in ("AGENTS.md", ".gitattributes", "Task.md"):
             shutil.copyfile(source / filename, self.root / filename)
 
     def manifest(self):
@@ -95,6 +95,10 @@ class HarnessVerificationTests(unittest.TestCase):
     def test_missing_architecture_document(self):
         (self.root / "docs/ARCHITECTURE.md").unlink()
         self.assertIn("ARCHITECTURE.md", "\n".join(verify(self.root)))
+
+    def test_missing_source_requirements_document(self):
+        (self.root / "Task.md").unlink()
+        self.assertIn("Task.md", "\n".join(verify(self.root)))
 
     def test_invalid_manifest(self):
         (self.root / ".agents/upstream.json").write_text("{", encoding="utf-8")

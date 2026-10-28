@@ -16,5 +16,4 @@ htmlcov/
 .env*
 !.env.example
 *.log
-Task.md
 

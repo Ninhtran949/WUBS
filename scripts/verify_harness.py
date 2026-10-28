@@ -17,6 +17,7 @@ SKILLS = {
 }
 REQUIRED = (
     "AGENTS.md",
+    "Task.md",
     ".gitattributes",
     ".agents/LICENSE",
     "docs/PROJECT.md",
